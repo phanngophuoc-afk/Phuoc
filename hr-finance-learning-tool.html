@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<!-- BEGIN-PAGE -->
+<title>The People Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a ledger book. Left rail = table of contents (modules), right page = the lesson.
+   Accent "ledger green" carries finance; amber marks every "HR lens" translation. */
+:root {
+  --paper: #F2F5F3;
+  --surface: #FFFFFF;
+  --sunk: #E8EEEB;
+  --ink: #14211D;
+  --muted: #56675F;
+  --line: #D3DDD8;
+  --ledger: #1C6A56;
+  --ledger-ink: #FFFFFF;
+  --ledger-soft: #DFEEE8;
+  --hr: #94570F;
+  --hr-soft: #F7ECDA;
+  --good: #2B7A39;
+  --good-soft: #E1F1E2;
+  --warn: #9A6A00;
+  --warn-soft: #FBF1D3;
+  --bad: #AE3A2D;
+  --bad-soft: #F9E3E0;
+  --font-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1614; --surface: #15201D; --sunk: #1B2824; --ink: #E3ECE8; --muted: #9AADA5; --line: #2A3B36;
+    --ledger: #5BC0A2; --ledger-ink: #0B1513; --ledger-soft: #16362E;
+    --hr: #E2A75A; --hr-soft: #35260F;
+    --good: #72C980; --good-soft: #17301B; --warn: #E6BE5A; --warn-soft: #33290D; --bad: #EF7F72; --bad-soft: #3A1B17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1614; --surface: #15201D; --sunk: #1B2824; --ink: #E3ECE8; --muted: #9AADA5; --line: #2A3B36;
+  --ledger: #5BC0A2; --ledger-ink: #0B1513; --ledger-soft: #16362E;
+  --hr: #E2A75A; --hr-soft: #35260F;
+  --good: #72C980; --good-soft: #17301B; --warn: #E6BE5A; --warn-soft: #33290D; --bad: #EF7F72; --bad-soft: #3A1B17;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { background: var(--paper); }
+body { margin: 0; color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); }
+h2 { font-size: clamp(1.45rem, 3vw, 1.8rem); }
+h3 { font-size: 1.2rem; }
+p { margin: 0; }
+a { color: var(--ledger); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ledger); outline-offset: 2px; border-radius: 4px; }
+.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: .74rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+
+/* App shell */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1180px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; background: none; border: 0; padding: 0; cursor: pointer; }
+.brand-mark { font-family: var(--font-display); font-size: 1.3rem; }
+.brand-sub { font-size: .8rem; color: var(--muted); }
+.progress { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--muted); }
+.progress-track { width: 120px; height: 6px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--ledger); width: 0; transition: width .4s ease; }
+
+.shell { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; align-items: start; }
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); display: grid; gap: 4px; }
+.rail-label { margin-block: 4px 8px; }
+.rail-btn { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: var(--radius); padding: 10px 10px; cursor: pointer; }
+.rail-btn:hover { background: var(--sunk); }
+.rail-btn[aria-current="page"] { background: var(--surface); border-color: var(--line); }
+.rail-no { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; text-align: center; padding: 2px 0; }
+.rail-btn[aria-current="page"] .rail-no { background: var(--ledger); color: var(--ledger-ink); border-color: var(--ledger); }
+.rail-title { font-size: .92rem; font-weight: 600; line-height: 1.3; }
+.rail-sub { display: block; font-size: .78rem; font-weight: 400; color: var(--muted); }
+.tick { font-size: .78rem; color: var(--good); font-weight: 700; }
+.rail hr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; width: 100%; }
+
+main { min-width: 0; }
+.page { display: grid; gap: 28px; max-width: 760px; }
+
+/* Welcome */
+.hero { display: grid; gap: 14px; }
+.hero p.lead { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+.why { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.why-item { padding: 16px; border-top: 3px solid var(--hr); background: var(--surface); border-radius: 0 0 var(--radius) var(--radius); display: grid; gap: 6px; align-content: start; }
+.why-item strong { font-size: .98rem; }
+.why-item p { font-size: .9rem; color: var(--muted); }
+
+.menu { display: grid; gap: 14px; }
+.menu-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 18px; align-items: center; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; transition: border-color .15s, transform .15s; }
+.menu-card:hover { border-color: var(--ledger); transform: translateY(-1px); }
+.menu-no { font-family: var(--font-display); font-size: 2.2rem; color: var(--ledger); line-height: 1; }
+.menu-card h3 { margin-bottom: 4px; }
+.menu-card p { font-size: .92rem; color: var(--muted); }
+.menu-src { font-size: .78rem; color: var(--muted); margin-top: 6px; display: block; }
+.menu-go { font-weight: 600; color: var(--ledger); white-space: nowrap; }
+
+/* Lesson */
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.step-chip { font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; background: none; cursor: pointer; color: var(--muted); }
+.step-chip[aria-current="step"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.step-chip.done { color: var(--good); border-color: var(--good); }
+
+.lesson-head { display: grid; gap: 10px; }
+.lesson-head .src { font-size: .85rem; color: var(--muted); }
+.prose { display: grid; gap: 14px; max-width: 66ch; }
+.prose ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.prose li::marker { color: var(--ledger); }
+
+.callout { border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 8px; }
+.callout .eyebrow { color: inherit; }
+.callout.hr { background: var(--hr-soft); }
+.callout.hr .eyebrow { color: var(--hr); }
+.callout.book { background: var(--surface); border: 1px solid var(--line); }
+.callout.book .eyebrow { color: var(--ledger); }
+.callout.secret { background: var(--ledger-soft); }
+.callout.secret .eyebrow { color: var(--ledger); }
+.callout p, .callout li { font-size: .95rem; }
+.callout ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+.jargon { display: flex; flex-wrap: wrap; gap: 8px; }
+.term { border: 1px dashed var(--ledger); color: var(--ledger); background: none; border-radius: 6px; padding: 2px 10px; font-size: .85rem; cursor: pointer; }
+.term:hover { background: var(--ledger-soft); }
+.term-pop { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 6px; font-size: .92rem; }
+.term-pop .hrline { color: var(--hr); }
+
+/* T-account (the ledger) */
+.taccount { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.taccount-title { text-align: center; padding: 10px; font-family: var(--font-display); border-bottom: 2px solid var(--ink); }
+.taccount-cols { display: grid; grid-template-columns: 1fr 1fr; }
+.taccount-col { padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.taccount-col + .taccount-col { border-left: 2px solid var(--ink); }
+.tline { display: grid; gap: 2px; }
+.tline b { font-size: .92rem; }
+.tline span { font-size: .82rem; color: var(--muted); }
+.tline .q { color: var(--hr); font-weight: 600; font-size: .78rem; }
+
+/* Widgets */
+.widget { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 16px; }
+.widget-head { display: grid; gap: 4px; }
+.widget-head p { font-size: .9rem; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: fit-content; }
+.seg button { background: none; border: 0; padding: 7px 14px; cursor: pointer; font-size: .88rem; }
+.seg button[aria-pressed="true"] { background: var(--ledger); color: var(--ledger-ink); }
+table.ledger { width: 100%; border-collapse: collapse; font-size: .92rem; }
+table.ledger td, table.ledger th { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+table.ledger th { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+table.ledger td.r, table.ledger th.r { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+table.ledger tr.total td { border-top: 2px solid var(--ink); border-bottom: 0; font-weight: 700; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.table-wrap { overflow-x: auto; }
+.slider-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; }
+.slider-row label { font-size: .9rem; font-weight: 600; }
+.slider-row output { font-family: var(--font-mono); font-size: .95rem; }
+.slider-row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--ledger); }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 90px; gap: 10px; align-items: center; font-size: .88rem; }
+.bar-track { height: 18px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .25s ease; }
+.bar-fill.a { background: var(--ledger); } .bar-fill.b { background: var(--hr); }
+.bar-row .num { text-align: right; }
+.verdict-line { font-size: .95rem; padding: 10px 14px; border-radius: 8px; background: var(--sunk); }
+
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.fieldset-title { grid-column: 1 / -1; margin-top: 4px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: .84rem; color: var(--muted); }
+.field input { font-family: var(--font-mono); font-size: .95rem; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--sunk); border-radius: 8px; padding: 12px; display: grid; gap: 2px; }
+.stat .v { font-family: var(--font-mono); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.stat .k { font-size: .78rem; color: var(--muted); }
+.pill { display: inline-block; font-size: .78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* Exercise */
+.exercise { border: 2px solid var(--ink); border-radius: var(--radius); background: var(--surface); padding: 22px; display: grid; gap: 16px; }
+.exercise .scenario { display: grid; gap: 10px; }
+.exercise .scenario p { font-size: .97rem; }
+.facts { background: var(--sunk); border-radius: 8px; padding: 12px 16px; font-size: .92rem; }
+.facts ul { margin: 0; padding-left: 1.1em; display: grid; gap: 3px; }
+.choices { display: grid; gap: 10px; }
+.choice { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; text-align: left; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; cursor: pointer; font-size: .95rem; }
+.choice:hover { border-color: var(--ledger); }
+.choice[aria-pressed="true"] { border-color: var(--ledger); background: var(--ledger-soft); }
+.choice .letter { font-family: var(--font-mono); font-weight: 500; border: 1px solid var(--line); border-radius: 6px; text-align: center; line-height: 24px; height: 26px; background: var(--surface); }
+.choice[aria-pressed="true"] .letter { background: var(--ledger); color: var(--ledger-ink); border-color: var(--ledger); }
+.choice.is-right { border-color: var(--good); }
+.choice.is-wrong { border-color: var(--bad); }
+textarea { width: 100%; min-height: 96px; resize: vertical; font: inherit; font-size: .95rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.reason-label { font-size: .9rem; font-weight: 600; }
+.reason-hint { font-size: .82rem; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .92rem; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ledger); color: var(--ledger-ink); border-color: var(--ledger); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.form-note { font-size: .85rem; color: var(--bad); }
+.feedback { display: grid; gap: 14px; border-top: 1px dashed var(--line); padding-top: 16px; }
+.feedback h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.feedback .you-said { font-size: .9rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 12px; font-style: italic; }
+.feedback ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: .95rem; }
+
+/* What next */
+.next { background: var(--ink); color: var(--paper); border-radius: var(--radius); padding: 22px; display: grid; gap: 14px; }
+.next h3 { color: var(--paper); }
+.next p { color: color-mix(in srgb, var(--paper) 78%, transparent); font-size: .95rem; }
+.next .actions .btn { background: transparent; color: var(--paper); border-color: color-mix(in srgb, var(--paper) 35%, transparent); }
+.next .actions .btn:hover { border-color: var(--paper); }
+.next .actions .btn.primary { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+
+.pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* Glossary */
+.gloss { display: grid; gap: 10px; }
+.gloss-search { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%; }
+.gloss details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 16px; }
+.gloss summary { cursor: pointer; padding: 14px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
+.gloss summary span { font-weight: 400; color: var(--muted); font-size: .88rem; }
+.gloss details > div { padding-bottom: 14px; display: grid; gap: 8px; font-size: .95rem; }
+.gloss .hrline { color: var(--hr); }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  .rail { position: static; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); overflow-x: auto; padding-bottom: 4px; }
+  .rail-label, .rail hr { display: none; }
+  .rail-btn { grid-template-columns: 30px 1fr; }
+  .rail-btn .tick { display: none; }
+  .rail-sub { display: none; }
+  .why { grid-template-columns: minmax(0, 1fr); }
+  .topbar-inner { padding: 10px 16px; }
+  .progress-track { width: 70px; }
+}
+@media (max-width: 560px) {
+  .menu-card { grid-template-columns: 44px minmax(0, 1fr); }
+  .menu-go { grid-column: 2; }
+  .menu-no { font-size: 1.7rem; }
+  .fields, .stats { grid-template-columns: minmax(0, 1fr); }
+  .taccount-cols { grid-template-columns: minmax(0, 1fr); }
+  .taccount-col + .taccount-col { border-left: 0; border-top: 2px solid var(--ink); }
+  .bar-row { grid-template-columns: 84px minmax(0, 1fr) 76px; }
+  .brand-sub { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="brand" id="brand" type="button" aria-label="Back to the welcome page">
+      <span class="brand-mark">The People Ledger</span>
+      <span class="brand-sub">Corporate finance for HR partners</span>
+    </button>
+    <div class="progress" aria-live="polite">
+      <span id="progress-text">0 of 6 exercises</span>
+      <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Modules"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Storage (optional, per viewer) ---------- */
+  var STORE_KEY = "people-ledger-v1";
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function saveState() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+  }
+  var state = loadState();
+  state.done = state.done || {};
+
+  /* ---------- Glossary: jargon -> plain English -> HR analogy ---------- */
+  var GLOSSARY = {
+    "balance sheet": { plain: "A snapshot, on one specific day, of everything the company owns and who paid for it.", hr: "Like a headcount report run on 31 December: true for that day only. The next day it has already changed.", ch: "Ch. 1–2" },
+    "assets": { plain: "Things the company owns that will bring in cash: cash itself, money customers owe, inventory, buildings, equipment, patents.", hr: "Your trained, retained workforce creates value, but accounting does not list people as assets. Their value shows up in the stock price instead.", ch: "Ch. 2" },
+    "liabilities": { plain: "Money the company owes to others: suppliers, lenders, and employees.", hr: "Wages earned but not yet paid, unused vacation that must be paid out, and pension promises are all liabilities. HR creates many of them.", ch: "Ch. 2" },
+    "shareholders' equity": { plain: "What would be left for the owners if the company sold everything it owns and paid off everything it owes.", hr: "Think of it as the owners' stake in the business, the part that grows when the company creates value.", ch: "Ch. 2" },
+    "capital budgeting": { plain: "Deciding which long-term investments are worth making: new factories, systems, products.", hr: "The same thinking as approving a new team: a cost now in exchange for benefits over several years.", ch: "Ch. 1" },
+    "capital structure": { plain: "The mix of borrowed money (debt) and owners' money (equity) the company uses to pay for its assets.", hr: "Like deciding whether a new program is funded from your existing budget or from a loan you must repay with interest.", ch: "Ch. 1" },
+    "net working capital": { plain: "Short-term assets (cash, money customers owe, inventory) minus bills due within a year.", hr: "Your cushion for making payroll. If customers pay in 60 days but staff are paid every 2 weeks, this cushion has to cover the gap.", ch: "Ch. 1–2" },
+    "cash flow": { plain: "Actual money moving in or out of the bank account, as opposed to profit recorded on paper.", hr: "Payroll is paid in cash, never in profit. A profitable company can still struggle to pay its people on time.", ch: "Ch. 1–2" },
+    "free cash flow": { plain: "Cash left over after the company pays for operations and the investments it needs. It can go back to lenders and owners.", hr: "This is the pool that ultimately funds raises, bonuses and new hires without borrowing.", ch: "Ch. 2" },
+    "depreciation": { plain: "Spreading the cost of a long-lived item (like a laptop or a building) over the years it is used. It reduces profit but no cash leaves that year.", hr: "If you buy 100 laptops for new hires, the full cash goes out on day one, but the expense shows up a slice at a time over 3–5 years.", ch: "Ch. 2" },
+    "book value vs. market value": { plain: "Book value is what the accounts say an asset cost. Market value is what someone would actually pay for it today.", hr: "Good management and a strong culture never appear on the balance sheet, yet they push market value above book value.", ch: "Ch. 2" },
+    "current ratio": { plain: "Current assets divided by current liabilities. Above 1 means short-term resources exceed short-term bills.", hr: "A quick health check: can the company cover the next 12 months of bills, payroll included, from what it has coming in?", ch: "Ch. 3" },
+    "quick ratio": { plain: "Like the current ratio, but leaves out inventory because inventory can be hard to turn into cash quickly.", hr: "A staffing firm like ManpowerGroup holds almost no inventory, so its quick ratio equals its current ratio. Its \"product\" is people, paid weekly.", ch: "Ch. 3" },
+    "agency problem": { plain: "The conflict that arises when someone (the agent) is hired to act for someone else (the principal) but has different incentives.", hr: "Every incentive plan you design is an attempt to solve this: making what is good for the employee also good for the owners.", ch: "Ch. 1" },
+    "agency costs": { plain: "The costs created by that conflict: lost opportunities, perks that benefit managers but not owners, and the cost of monitoring.", hr: "Audit fees, a lavish executive jet, or a manager who blocks a smart but risky project to protect their own job.", ch: "Ch. 1" },
+    "stakeholders": { plain: "Anyone with a potential claim on the company's cash flows: employees, customers, suppliers, government.", hr: "Employees are stakeholders. Their claim is paid through wages, benefits and pensions.", ch: "Ch. 1" },
+    "stock option": { plain: "The right to buy a share at a fixed price (the strike price) for a set period. It has value only if the stock rises above that price.", hr: "An option pays off only when the company does well, which is why boards use it to tie pay to performance.", ch: "Ch. 1, 23" },
+    "strike price": { plain: "The fixed price at which an option holder can buy the stock. For executive options it is usually the stock price on the grant day.", hr: "If the strike is $50 and the stock trades at $45, the option is \"underwater\" and worth nothing if used today.", ch: "Ch. 23" },
+    "restricted stock units (RSUs)": { plain: "A promise to give an employee actual shares once they meet conditions, usually staying a set number of years.", hr: "Unlike options, RSUs keep some value even if the stock falls, so they are a stronger retention tool and a weaker performance motivator.", ch: "Ch. 1, 23" },
+    "clawback": { plain: "A rule allowing the company to take back a bonus that has already been paid, for reasons such as fraud or misconduct.", hr: "Clawback language belongs in your bonus plan documents and offer letters, and HR usually administers it.", ch: "Ch. 1" },
+    "deferred compensation": { plain: "Pay earned now but paid several years later. If circumstances warrant, the payment can be canceled.", hr: "It works like a built-in clawback: the money is not yet out of the door if problems surface.", ch: "Ch. 1" },
+    "WACC": { plain: "Weighted average cost of capital: the company's blended cost of money, mixing what lenders charge and what owners expect to earn.", hr: "It is the hurdle rate. A new program has to earn more than this, just as a contractor team has to deliver more than its blended hourly rate.", ch: "Later chapters" },
+    "beta": { plain: "A measure of how much a stock tends to swing when the overall market moves.", hr: "Like how sensitive a role is to the economy: sales hiring swings sharply with the business cycle, payroll administration hardly moves.", ch: "Later chapters" },
+    "time value of money": { plain: "A dollar today is worth more than a dollar next year, because today's dollar can be invested and is certain.", hr: "This is why employees value a sign-on bonus paid now more than the same amount promised in three years.", ch: "Ch. 1" }
+  };
+
+  /* ---------- Modules ---------- */
+  var MODULES = [
+    {
+      id: "m1",
+      no: "1",
+      title: "The Big Picture & Company Goals",
+      short: "Big picture & goals",
+      src: "Chapter 1: the balance sheet model, cash flows, the goal of financial management, stakeholders",
+      blurb: "What a company is in financial terms, why cash beats profit, and what management is actually trying to maximize.",
+      sections: [
+        {
+          title: "The company as a two-sided ledger",
+          html:
+            '<div class="prose">' +
+            '<p>The book opens with a simple picture: the <b>balance sheet model of the firm</b>. On the left is everything the company owns. On the right is who paid for it. Both sides always add up to the same number.</p>' +
+            '</div>' +
+            '<div class="taccount" role="figure" aria-label="Balance sheet model of the firm">' +
+            '<div class="taccount-title">The balance sheet model of the firm</div>' +
+            '<div class="taccount-cols">' +
+            '<div class="taccount-col"><span class="eyebrow">What we own (assets)</span>' +
+            '<div class="tline"><b>Current assets</b><span>Cash, money customers owe us, inventory</span><span class="q">Question 3: how do we manage day-to-day cash?</span></div>' +
+            '<div class="tline"><b>Fixed assets</b><span>Buildings, equipment, plus intangibles such as patents and brand</span><span class="q">Question 1: what long-term investments should we make?</span></div>' +
+            '</div>' +
+            '<div class="taccount-col"><span class="eyebrow">Who paid for it</span>' +
+            '<div class="tline"><b>Current liabilities</b><span>Bills due within a year: suppliers, wages owed, short-term loans</span></div>' +
+            '<div class="tline"><b>Long-term debt</b><span>Money borrowed from lenders</span><span class="q">Question 2: borrow, or use owners\' money?</span></div>' +
+            '<div class="tline"><b>Shareholders\' equity</b><span>The owners\' stake</span></div>' +
+            '</div></div></div>' +
+            '<div class="prose"><p>Every financial manager spends their day on three questions. Here they are with an HR translation:</p><ul>' +
+            '<li><b>Capital budgeting:</b> which long-term investments are worth it? In HR terms, this is approving a new team or an HRIS system: money out now, benefits over years.</li>' +
+            '<li><b>Capital structure:</b> how do we pay for those investments, with debt or with owners\' money? Similar to choosing between funding a program from your budget or from a loan that must be repaid.</li>' +
+            '<li><b>Net working capital:</b> how do we keep enough cash on hand for daily bills? This is the question behind "can we make payroll on Friday?"</li>' +
+            '</ul></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>When the CFO asks you to justify a hiring plan, they are asking a capital budgeting question. Frame your request the way they think: what does it cost, when do the benefits arrive, and how sure are we?</p></div>' +
+            '<div class="jargon"><button class="term" data-term="capital budgeting">capital budgeting</button><button class="term" data-term="capital structure">capital structure</button><button class="term" data-term="net working capital">net working capital</button><button class="term" data-term="assets">assets</button><button class="term" data-term="liabilities">liabilities</button></div>'
+        },
+        {
+          title: "Cash is not the same as profit",
+          html:
+            '<div class="prose"><p>The book\'s first example is the <b>Midland Company</b>, a gold trader. Midland bought gold for <span class="num">$900,000</span> in cash at the start of the year and sold it for <span class="num">$1,000,000</span> at the end of the year. The customer has not paid yet.</p>' +
+            '<p>Switch between the two views below. Same company, same year, two very different stories.</p></div>' +
+            '<div class="widget" id="w-midland"></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book</span><p>"Value creation depends on cash flows. For Midland, value creation depends on whether and when it actually receives $1 million."</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><ul><li>Payroll, benefits premiums and bonuses are paid in <b>cash</b>, not profit.</li><li>A company can report record profit while its bank balance shrinks, because customers have not paid yet. That is when hiring freezes surprise everyone.</li><li>When you design bonus plans funded "from profit," ask whether the cash will actually be there on the payout date.</li></ul></div>' +
+            '<div class="jargon"><button class="term" data-term="cash flow">cash flow</button><button class="term" data-term="free cash flow">free cash flow</button></div>'
+        },
+        {
+          title: "Timing and risk",
+          html:
+            '<div class="prose"><p>Two more ideas from Chapter 1 shape every finance decision:</p><ul>' +
+            '<li><b>Timing:</b> "One dollar received today is worth more than one dollar received next year." Today\'s dollar can be put to work, and it is certain.</li>' +
+            '<li><b>Risk:</b> a promised dollar that might not arrive is worth less than a safe one. Midland compared expanding into a safer market with a riskier one and weighed the range of outcomes, not just the best case.</li></ul>' +
+            '<p>Midland had to choose between two products, each costing <span class="num">$10,000</span>. Product A pays nothing for three years, then <span class="num">$20,000</span> in year 4. Product B pays <span class="num">$4,000</span> every year for four years, <span class="num">$16,000</span> in total. A has the bigger total. Is it the better choice?</p></div>' +
+            '<div class="widget" id="w-timing"></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>Employees apply the same logic to their pay. A <span class="num">$20,000</span> sign-on bonus today feels worth more than <span class="num">$20,000</span> spread over three years, and a retention bonus paid in year 3 is worth less to them than its face value. That gap is exactly why deferred pay retains people: they have to stay to collect it.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="time value of money">time value of money</button><button class="term" data-term="WACC">WACC</button></div>'
+        },
+        {
+          title: "The goal: owners' value, with people in the picture",
+          html:
+            '<div class="prose"><p>The book considers several possible goals (survive, beat competitors, maximize sales, minimize costs) and settles on one precise statement:</p></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book</span><p>"The goal of financial management is to maximize the current value of the existing stock."</p></div>' +
+            '<div class="prose"><p>In plain language: make good decisions that increase what the business is worth to its owners <i>today</i>, based on all the future cash it is expected to produce.</p>' +
+            '<p>That does not leave people out. The book defines <b>stakeholders</b> as anyone with "a claim on the cash flows of the firm": employees, customers, suppliers, and government. Employees are paid out of those cash flows through wages, benefits and pensions.</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens: how your work shows up in value</span><ul>' +
+            '<li><b>Lower turnover</b> cuts recruiting and onboarding cash costs, so cash flow rises.</li>' +
+            '<li><b>Faster ramp-up</b> brings revenue forward, and earlier cash is worth more.</li>' +
+            '<li><b>Fair, stable workforce practices</b> reduce risk (strikes, lawsuits, key-person loss), and lower risk raises value.</li>' +
+            '</ul><p>If you can describe an HR program in those three terms (more cash, sooner, with less risk), you are speaking the CFO\'s language.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="stakeholders">stakeholders</button><button class="term" data-term="book value vs. market value">book value vs. market value</button></div>'
+        }
+      ],
+      exercises: [
+        {
+          id: "m1e1",
+          title: "The record-profit hiring freeze",
+          scenario:
+            '<p>You are the HR Business Partner at a B2B software firm. The quarterly results show <b>record profit</b>. The next morning, the CFO pauses all new hiring for 60 days. Managers flood your inbox: "We just had our best quarter. Why are we freezing?"</p>' +
+            '<div class="facts"><ul><li>Revenue booked this quarter: <span class="num">$12M</span>, up 40%.</li><li>Two large customers signed big deals with <b>payment terms of 90 days</b>.</li><li>Bank balance fell from <span class="num">$5M</span> to <span class="num">$2.1M</span> during the quarter.</li><li>Payroll runs <span class="num">$1.4M</span> every month.</li></ul></div>',
+          question: "What is the best explanation to give the managers?",
+          choices: [
+            { text: "The CFO is being overly cautious. Profit was a record, so the money is there and the freeze should be challenged.", score: 0, fb: "Profit was recorded, but the money is not there yet. This is Midland's gold sale again: revenue is booked when the deal is signed, while the cash arrives 90 days later." },
+            { text: "Profit is recorded when deals are signed, but much of that cash will not arrive for 90 days. With <span class=\"num\">$2.1M</span> in the bank and <span class=\"num\">$1.4M</span> monthly payroll, the company needs to protect cash until customers pay.", score: 2, fb: "Exactly right. The company is profitable on paper and short on cash in the bank. The freeze protects the ability to pay current employees, which is the first obligation." },
+            { text: "The company must be losing money and hiding it. Managers should prepare for layoffs.", score: 0, fb: "Nothing suggests losses. The business is growing. The issue is timing: cash lags behind profit. Saying \"layoffs\" here would cause needless panic and attrition." },
+            { text: "Hiring is frozen because the stock price went down.", score: 1, fb: "The stock price may move, but it does not explain a hiring freeze right after a record quarter. Look at the bank balance and the payment terms instead." }
+          ],
+          keywords: [
+            { words: ["cash", "bank"], note: "You focused on cash rather than profit. That is the core finance habit.", hint: "Separate profit (on paper) from cash (in the bank)." },
+            { words: ["90", "pay", "collect", "receiv", "terms", "owe"], note: "You noticed that customers have not paid yet, the gap between booking a sale and collecting it.", hint: "Point to the 90-day payment terms: the sales are booked but not collected." },
+            { words: ["payroll", "salar", "wage"], note: "You connected the freeze to protecting payroll, which is exactly how HR should frame it.", hint: "Connect the freeze to protecting payroll for current employees." },
+            { words: ["timing", "temporar", "60 day", "until"], note: "You saw this as a timing issue, not a sign of a failing business.", hint: "Frame it as a temporary timing gap, not a failing business." }
+          ],
+          missing: "Next time, try naming the timing gap explicitly: profit arrives on paper today, cash arrives in 90 days.",
+          secret: "<p><b>Profit is an opinion; cash is a fact.</b> Accounting records a sale when it happens. Finance cares about when the money lands. A fast-growing company can have record profit and a cash squeeze at the same time, because growth ties up cash in unpaid customer bills.</p><p>When you explain a freeze this way (\"we're growing faster than customers pay us\"), managers hear a temporary timing problem instead of a crisis, which protects morale and retention.</p>"
+        },
+        {
+          id: "m1e2",
+          title: "Two leadership programs, same total savings",
+          scenario:
+            '<p>You have a <span class="num">$60,000</span> budget for one leadership program. Both vendors claim the same total benefit: <span class="num">$120,000</span> in reduced turnover costs. They differ in when the savings arrive.</p>' +
+            '<div class="facts"><ul><li><b>Program A (coaching):</b> saves <span class="num">$40,000</span> per year in years 1, 2 and 3.</li><li><b>Program B (academy):</b> saves nothing in years 1 and 2, then <span class="num">$120,000</span> in year 3. The vendor admits results "depend on participants staying until graduation."</li></ul></div>',
+          question: "Which program should you put forward to the CFO, and why?",
+          choices: [
+            { text: "Either one. The total savings are identical, so it makes no difference.", score: 0, fb: "Same total, different value. A dollar saved in year 1 is worth more than one saved in year 3, and B's savings are also less certain." },
+            { text: "Program B. One big payoff is more impressive in a presentation.", score: 0, fb: "A big single number looks good, but it arrives last and depends on everyone staying three years. Finance would value it lower." },
+            { text: "Program A. Its savings arrive sooner, and they are spread out, so they are less risky than one late payoff.", score: 2, fb: "That is the CFO's reasoning: earlier cash is worth more (timing), and steady savings are more reliable than a single bet (risk)." },
+            { text: "Neither. Training never pays back.", score: 0, fb: "Training can create real value. The question is how to compare programs, not whether to train at all." }
+          ],
+          keywords: [
+            { words: ["sooner", "earlier", "early", "year 1", "first year", "timing", "now"], note: "You used timing: earlier savings are worth more.", hint: "Timing: savings that arrive earlier are worth more." },
+            { words: ["risk", "certain", "depend", "stay", "guarantee", "reliab"], note: "You spotted the risk in B: its payoff depends on people staying.", hint: "Risk: Program B only pays off if participants stay three years." },
+            { words: ["payback", "pay back", "recover", "break even", "breakeven"], note: "You thought about payback: A recovers its cost by the middle of year 2.", hint: "Payback: Program A earns back its $60,000 cost by the middle of year 2." }
+          ],
+          missing: "Try using both levers in your answer: timing (when the money comes) and risk (how sure we are it comes).",
+          secret: "<p><b>Equal totals are not equal value.</b> Finance discounts future dollars for two reasons: waiting (timing) and uncertainty (risk). At a 10% rate, Program A's savings are worth about <span class=\"num\">$99,500</span> today, and Program B's about <span class=\"num\">$90,200</span>, before even adjusting for B's extra risk.</p><p>Present HR investments with a timeline of savings, not just a total. It is the single fastest way to earn credibility with Finance.</p>"
+        }
+      ]
+    },
+    {
+      id: "m2",
+      no: "2",
+      title: "Reading the Scoreboard",
+      short: "Financial statements",
+      src: "Chapters 2 & 3: balance sheet, income statement, cash flow vs. accounting profit, net working capital, liquidity ratios",
+      blurb: "How to read a balance sheet and an income statement, why net income is not cash flow, and how working capital decides whether payroll gets paid.",
+      sections: [
+        {
+          title: "The balance sheet: a photograph",
+          html:
+            '<div class="prose"><p>The balance sheet shows what a company owns and owes <b>on one specific date</b>. It always balances:</p></div>' +
+            '<div class="callout secret"><span class="eyebrow">The one equation to remember</span><p style="font-family:var(--font-mono);font-size:1.05rem">Assets = Liabilities + Shareholders\' equity</p><p>What we own = what we owe + what belongs to the owners.</p></div>' +
+            '<div class="prose"><p>Assets are listed in order of how quickly they turn into cash: cash first, then money customers owe, then inventory, then buildings and equipment.</p>' +
+            '<p>Chapter 2 also stresses <b>book value versus market value</b>. Book value is what the accounts say. Market value is what the business would actually sell for. The book notes that many valuable things never appear on the balance sheet at all: "good management, proprietary assets, favorable economic conditions."</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens: your fingerprints on the balance sheet</span><ul>' +
+            '<li><b>Accrued wages:</b> pay employees have earned but not yet received is a current liability.</li>' +
+            '<li><b>Accrued vacation / PTO:</b> unused leave the company must pay out is a liability that grows when people do not take time off.</li>' +
+            '<li><b>Pension and retiree benefit obligations:</b> often among the largest long-term liabilities a company carries.</li>' +
+            '<li><b>Your workforce</b> is not listed as an asset, but the gap between book and market value is partly the value of your people and leadership.</li></ul></div>' +
+            '<div class="jargon"><button class="term" data-term="balance sheet">balance sheet</button><button class="term" data-term="shareholders\' equity">shareholders\' equity</button><button class="term" data-term="book value vs. market value">book vs. market value</button></div>'
+        },
+        {
+          title: "The income statement: a video",
+          html:
+            '<div class="prose"><p>The book puts it neatly: "If the balance sheet is like a snapshot, the income statement is like a video recording of what the company did between two snapshots."</p>' +
+            '<p>Its structure is simple: <b>Revenue − Expenses = Net income</b>. For many companies, people costs (salaries, benefits, payroll taxes) are the largest expense line.</p>' +
+            '<p>Some expenses involve no cash leaving that year. The book highlights two:</p><ul>' +
+            '<li><b>Depreciation:</b> the cost of a laptop or building is spread across the years it is used. The cash left on the day of purchase; the expense trickles in later.</li>' +
+            '<li><b>Deferred taxes:</b> tax recorded as an expense now but paid to the government later.</li></ul></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>Stock-based pay works the same way. Apple expensed about <span class="num">$12.2 billion</span> of stock compensation in 2020 (Chapter 1), which lowered reported profit, but no cash left the bank to pay it. This is why Finance treats a cash bonus and a stock grant of the same value very differently.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="depreciation">depreciation</button></div>'
+        },
+        {
+          title: "Net income is not cash flow",
+          html:
+            '<div class="prose"><p>Chapter 2 walks through the fictional <b>U.S. Composite Corporation</b>. Its net income in 2022 was <span class="num">$86 million</span>, but its cash flow was only <span class="num">$42 million</span>. The book\'s conclusion: "Net income is not cash flow… cash flow is more revealing."</p>' +
+            '<p>Finance measures the cash a business produces in three steps:</p></div>' +
+            '<div class="table-wrap"><table class="ledger"><thead><tr><th>Step</th><th>Plain meaning</th><th>HR example</th></tr></thead><tbody>' +
+            '<tr><td>Operating cash flow</td><td>Cash the business generates from normal work</td><td>Revenue collected minus payroll and other costs actually paid</td></tr>' +
+            '<tr><td>− Capital spending</td><td>Cash spent on long-lived equipment and systems</td><td>A new HRIS, an office fit-out for a growing team</td></tr>' +
+            '<tr><td>− Additions to net working capital</td><td>Cash tied up in day-to-day operations</td><td>Growing sales means more unpaid customer bills waiting to be collected</td></tr>' +
+            '<tr class="total"><td>= Cash flow of the firm</td><td colspan="2">Often called "free cash flow": cash free to return to lenders and owners</td></tr>' +
+            '</tbody></table></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>Free cash flow is the pool that funds raises, bonuses and new headcount without borrowing. When Finance says "we can\'t afford it," they usually mean free cash flow, not profit.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="free cash flow">free cash flow</button><button class="term" data-term="cash flow">cash flow</button></div>'
+        },
+        {
+          title: "Working capital: can we make payroll?",
+          html:
+            '<div class="prose"><p><b>Net working capital</b> is current assets minus current liabilities. The book says when it is positive, "the cash that will become available over the next 12 months will be greater than the cash that must be paid out." U.S. Composite\'s net working capital grew from <span class="num">$252M</span> to <span class="num">$271M</span>, which is normal for a growing firm.</p>' +
+            '<p>Chapter 3 adds two quick health checks:</p><ul>' +
+            '<li><b>Current ratio</b> = current assets ÷ current liabilities.</li>' +
+            '<li><b>Quick ratio</b> = the same, but leaving out inventory, which may be slow to sell.</li></ul>' +
+            '<p>The book contrasts Walmart (current ratio <span class="num">0.80</span>, quick ratio <span class="num">0.23</span>) with staffing company <b>ManpowerGroup</b> (<span class="num">1.44</span> for both). Manpower carries almost no inventory; its product is people.</p>' +
+            '<p>Try it below with a sample company. Change any number to see whether next payroll is covered.</p></div>' +
+            '<div class="widget" id="w-nwc"></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>Positive working capital does not guarantee cash on payday. If most of it is money customers still owe, payroll may depend on collections arriving on time. Ask Finance about the <b>cash</b> line and the <b>timing</b> of receivables before committing to off-cycle payments.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="net working capital">net working capital</button><button class="term" data-term="current ratio">current ratio</button><button class="term" data-term="quick ratio">quick ratio</button></div>'
+        }
+      ],
+      exercises: [
+        {
+          id: "m2e1",
+          title: "The off-cycle retention bonus",
+          scenario:
+            '<p>A division head asks you to approve a one-time <span class="num">$400,000</span> retention bonus for a team being poached by a competitor, paid <b>next week</b>. You check the latest balance sheet with Finance:</p>' +
+            '<div class="facts"><ul><li>Cash: <span class="num">$2.0M</span></li><li>Money customers owe (due in about 60 days): <span class="num">$3.0M</span></li><li>Inventory: <span class="num">$1.0M</span></li><li>Supplier bills due this month: <span class="num">$1.5M</span></li><li>Payroll due in 2 weeks: <span class="num">$0.9M</span></li><li>Short-term loan due in 6 months: <span class="num">$0.6M</span></li></ul></div>' +
+            '<p>Net working capital is a healthy-looking <span class="num">$3.0M</span> and the current ratio is <span class="num">2.0</span>.</p>',
+          question: "What should you recommend?",
+          choices: [
+            { text: "Approve full payment next week. Net working capital is $3M, so $400K is easily covered.", score: 0, fb: "Working capital looks healthy, but half of it is money customers still owe. Cash on hand is $2.0M against $2.4M of bills due within a month, before adding the bonus." },
+            { text: "Approve, because the current ratio of 2.0 means the company has twice what it needs.", score: 0, fb: "The ratio includes receivables and inventory that will not be cash next week. Look at the quick picture: what is actually in the bank right now?" },
+            { text: "Retain the team with a split: a smaller amount now, the rest after customer collections arrive (and conditioned on staying), and confirm the timing with Finance.", score: 2, fb: "Strong answer. You keep the retention goal, match the payout to when cash actually arrives, and the delayed portion strengthens retention because people must stay to collect it." },
+            { text: "Refuse. The company is close to bankruptcy.", score: 0, fb: "That overstates it. The business has $3M coming in from customers. It is a timing squeeze, not insolvency." }
+          ],
+          keywords: [
+            { words: ["cash", "bank", "2.0", "2m", "$2"], note: "You looked at actual cash on hand, not just working capital.", hint: "Look at actual cash on hand ($2.0M), not just working capital." },
+            { words: ["receiv", "customer", "collect", "owe", "60"], note: "You noticed that much of the cushion is customer money not yet collected.", hint: "Half of the cushion is customer money not yet collected." },
+            { words: ["payroll", "supplier", "bill", "2.4"], note: "You lined up the bills due soon against the cash available.", hint: "Line up bills due this month ($2.4M) against cash ($2.0M)." },
+            { words: ["split", "stag", "phase", "later", "defer", "install", "tranche", "condition", "stay"], note: "You proposed staging the payment, which protects cash and improves retention.", hint: "Staging the payment protects cash and improves retention." }
+          ],
+          missing: "A useful habit: compare cash on hand with bills due in the next 30 days before approving any off-cycle payment.",
+          secret: "<p><b>A healthy balance sheet can hide a thin bank account.</b> Here, bills due within a month (<span class=\"num\">$1.5M + $0.9M = $2.4M</span>) already exceed cash (<span class=\"num\">$2.0M</span>). Paying <span class=\"num\">$400K</span> next week would force the company to borrow or delay suppliers.</p><p>Staging the bonus (some now, more after collections and conditioned on staying) is good finance and good retention design at the same time. Deferred payouts are one of HR's best tools in a cash squeeze.</p>"
+        },
+        {
+          id: "m2e2",
+          title: "Profit up, cash down",
+          scenario:
+            '<p>Your company\'s income statement shows net income rose from <span class="num">$8M</span> to <span class="num">$10M</span>. Yet the CFO tells the leadership team that merit increases will be capped at 2% this year. A manager asks you how that can possibly make sense.</p>' +
+            '<div class="facts"><ul><li>The company spent <span class="num">$6M</span> cash on new equipment and a new HR/payroll system this year.</li><li>Unpaid customer bills grew by <span class="num">$3M</span> as sales expanded.</li><li>Depreciation (a non-cash expense) was <span class="num">$2M</span>.</li></ul></div>',
+          question: "What is the clearest explanation?",
+          choices: [
+            { text: "Net income went up, so the CFO is wrong and HR should push back.", score: 0, fb: "Net income ignores most of the cash spent on equipment and the cash tied up in unpaid customer bills. The CFO is looking at cash flow." },
+            { text: "Investments in equipment and growing customer balances used up cash, so cash flow is far lower than net income. Raises are paid in cash.", score: 2, fb: "Correct. Roughly: $10M profit + $2M depreciation − $6M equipment − $3M more owed by customers ≈ $3M of cash flow. That is much tighter than \"$10M profit\" suggests." },
+            { text: "Depreciation reduced the cash available for raises.", score: 0, fb: "The opposite: depreciation reduces profit but uses no cash this year. It is added back when working out cash flow." },
+            { text: "The company must be about to cut jobs.", score: 0, fb: "Nothing here signals cuts. The business is investing and growing; both use cash before they return it." }
+          ],
+          keywords: [
+            { words: ["cash", "cash flow"], note: "You distinguished cash flow from net income.", hint: "Distinguish cash flow from net income." },
+            { words: ["equipment", "invest", "system", "capital", "6"], note: "You spotted capital spending as a big use of cash.", hint: "The $6M spent on equipment and systems is a big use of cash." },
+            { words: ["customer", "receiv", "owe", "collect", "working capital", "3m"], note: "You saw that growth ties up cash in unpaid customer bills.", hint: "Growth ties up cash in unpaid customer bills ($3M more this year)." },
+            { words: ["depreciation", "non-cash", "noncash"], note: "You handled depreciation correctly as a non-cash expense.", hint: "Depreciation lowers profit but uses no cash, so it is added back." }
+          ],
+          missing: "Try walking from profit to cash in steps: add back non-cash expenses, subtract investments, subtract cash tied up in growth.",
+          secret: "<p><b>Raises come out of cash flow, not net income.</b> Using the book's method: start with profit, add back non-cash expenses, subtract capital spending and the increase in working capital. Here, about <span class=\"num\">$3M</span> of cash was produced, against <span class=\"num\">$10M</span> of profit.</p><p>Knowing this lets you have a grown-up conversation with Finance: perhaps a lower merit pool now with a one-time payout once the new system starts saving money.</p>"
+        }
+      ]
+    },
+    {
+      id: "m3",
+      no: "3",
+      title: "Rewarding and Motivating Talent",
+      short: "Pay & incentives",
+      src: "Chapters 1 & 23: agency problems, executive compensation, stock options, clawbacks, deferred compensation",
+      blurb: "Why incentive design is a finance problem, what goes into an executive pay package, how stock options really work, and how clawbacks protect owners.",
+      sections: [
+        {
+          title: "The agency problem: why incentives matter",
+          html:
+            '<div class="prose"><p>Shareholders own the company but hire managers to run it. The book calls this an <b>agency relationship</b>: the owner is the principal and the manager is the agent. Whenever their interests differ, you have an <b>agency problem</b>.</p></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book</span><p>Suppose you hire someone to sell your car for a <b>flat fee</b>. Their incentive is to make the sale, not to get you the best price. Offer a <b>10% commission</b> instead, and the problem largely disappears. "The way in which an agent is compensated is one factor that affects agency problems."</p></div>' +
+            '<div class="prose"><p>The book describes <b>agency costs</b>, the price owners pay for this conflict:</p><ul>' +
+            '<li><b>Indirect:</b> a lost opportunity. Managers may reject a valuable but risky project because a failure could cost them their jobs.</li>' +
+            '<li><b>Direct, type 1:</b> spending that benefits managers but not owners, such as a luxurious, unneeded corporate jet.</li>' +
+            '<li><b>Direct, type 2:</b> the cost of monitoring managers, such as paying outside auditors.</li></ul>' +
+            '<p>Managers may also chase size over value, "overpaying to buy another company to increase the size of the business."</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><p>Every incentive plan HR designs is an agency-cost decision. Pay people for revenue alone and they may discount heavily. Pay a flat salary and nothing ties effort to results. Your job is to make what is good for the employee also good for the owners.</p></div>' +
+            '<div class="jargon"><button class="term" data-term="agency problem">agency problem</button><button class="term" data-term="agency costs">agency costs</button></div>'
+        },
+        {
+          title: "Inside an executive pay package",
+          html:
+            '<div class="prose"><p>Chapter 23 lists what executive pay usually includes: a <b>base salary</b> plus some or all of <b>long-term compensation, annual bonuses, retirement contributions, stock options and restricted stock units (RSUs)</b>. Options are often the biggest piece, though RSUs have grown in recent years.</p></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book: Apple, 2020</span><div class="table-wrap"><table class="ledger"><tbody>' +
+            '<tr><td>Tim Cook base salary</td><td class="r">$3.0M</td></tr>' +
+            '<tr><td>Bonus</td><td class="r">$10.7M</td></tr>' +
+            '<tr><td>Security and travel</td><td class="r">$1.0M</td></tr>' +
+            '<tr class="total"><td>Total compensation (approx.)</td><td class="r">$15M</td></tr>' +
+            '<tr><td>Restricted stock units owned</td><td class="r">$281M</td></tr>' +
+            '<tr><td>Apple stock-based pay, all employees</td><td class="r">$12.2B</td></tr>' +
+            '<tr><td>Per employee</td><td class="r">≈ $63,200</td></tr>' +
+            '</tbody></table></div></div>' +
+            '<div class="prose"><p>Notice the shape: the annual cash pay is small next to the stock Cook holds. His wealth rises and falls with Apple\'s share price, which ties his interests to the owners\'. The book\'s point: "from the stockholders\' point of view, sensitivity of compensation to firm performance is more important" than the level of pay.</p>' +
+            '<p>The book also notes the pay gap: average CEO pay was over <span class="num">221×</span> average employee pay in 2019, against <span class="num">30×</span> in 1978. Since 2018, large U.S. companies must report the ratio of CEO pay to median employee pay.</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><ul><li>You will likely help calculate and explain the CEO pay ratio disclosure.</li><li>Stock pay is not just for executives: Apple\'s $63,200 per employee shows how broad-based equity has become.</li><li>When benchmarking packages, compare how much pay is <b>at risk</b>, not just the totals.</li></ul></div>'
+        },
+        {
+          title: "Stock options vs. RSUs",
+          html:
+            '<div class="prose"><p>A <b>stock option</b> gives the right to buy shares at a fixed <b>strike price</b>. For executive options, the strike is almost always the share price on the grant date. If the stock rises above it, the option is worth the difference. If it does not, the option is worth nothing.</p>' +
+            '<p>Chapter 23 gives four reasons companies use options:</p><ul>' +
+            '<li>They make executives share the same interests as stockholders.</li>' +
+            '<li>They allow lower base pay, easing morale pressure from pay gaps.</li>' +
+            '<li>They put pay at risk instead of guaranteeing it.</li>' +
+            '<li>They are tax-efficient: at-the-money options are taxed only when exercised.</li></ul>' +
+            '<p>Drag the slider to compare 1,000 options with 250 RSUs, granted when the stock was <span class="num">$50</span>.</p></div>' +
+            '<div class="widget" id="w-options"></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book: Starbucks</span><p>Starbucks pushed options down to the lowest-level employees. Founder Howard Schultz: "we would grant stock options to every employee companywide, from the top managers to the baristas, in proportion to their level of base pay." When Starbucks went public, employees reaped real rewards.</p></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><ul><li><b>Options</b> reward performance strongly but can become worthless ("underwater"), which can hurt morale and retention.</li><li><b>RSUs</b> keep value even when the stock falls, so they retain better and motivate less sharply.</li><li>The book adds that executives often value options <b>less</b> than their market value, because so much of their wealth is already tied to one company.</li></ul></div>' +
+            '<div class="jargon"><button class="term" data-term="stock option">stock option</button><button class="term" data-term="strike price">strike price</button><button class="term" data-term="restricted stock units (RSUs)">RSUs</button></div>'
+        },
+        {
+          title: "Clawbacks, deferral and who's in control",
+          html:
+            '<div class="prose"><p>Pay tied to performance creates a temptation to fake performance. The book describes two safeguards:</p><ul>' +
+            '<li><b>Clawbacks:</b> "a bonus can be reclaimed by the company for specific reasons, such as fraud."</li>' +
+            '<li><b>Deferred compensation:</b> "money paid to an executive several years after it is earned," which "can be canceled" if circumstances warrant.</li></ul></div>' +
+            '<div class="callout book"><span class="eyebrow">From the book: Goldman Sachs, 2019</span><p>Goldman investigated clawing back <span class="num">$14.2M</span> from former CEO Lloyd Blankfein and <span class="num">$15.4M</span> from CEO David Solomon after a Malaysian bribery scandal that caused the bank\'s value to tumble by half.</p></div>' +
+            '<div class="prose"><p>Beyond pay, owners have two more ways to keep managers focused on value:</p><ul>' +
+            '<li><b>Proxy fights:</b> shareholders vote to replace the board. Activist investor Elliott Management pushed eBay to sell StubHub and its Classifieds business.</li>' +
+            '<li><b>Takeovers:</b> when Eldorado acquired Caesars Entertainment for <span class="num">$17.3B</span> in 2020, Caesars\' management was let go.</li></ul></div>' +
+            '<div class="callout hr"><span class="eyebrow">HR lens</span><ul><li>Clawback terms must be written into plan documents and agreements before payouts. HR owns that paperwork.</li><li>Define triggers clearly: financial restatement, fraud, serious misconduct.</li><li>Deferral and vesting periods double as retention: people must stay to collect.</li></ul></div>' +
+            '<div class="jargon"><button class="term" data-term="clawback">clawback</button><button class="term" data-term="deferred compensation">deferred compensation</button></div>'
+        }
+      ],
+      exercises: [
+        {
+          id: "m3e1",
+          title: "Design a retention package for a VP of Sales",
+          scenario:
+            '<p>Your top VP of Sales has a competing offer. The CEO approves up to <span class="num">$300,000</span> in extra value to keep them. The board has two concerns: they want <b>profitable</b> growth, not just volume, and last year another sales leader booked deals that later fell apart after their bonus was paid.</p>',
+          question: "Which package best fits what the owners want?",
+          choices: [
+            { text: "$300,000 cash bonus paid immediately to show commitment.", score: 0, fb: "Cash upfront rewards nothing going forward. The VP could take the money and leave next month, and there is no protection if past results unravel." },
+            { text: "$300,000 bonus paid quarterly based on total sales volume booked.", score: 1, fb: "Better than upfront cash, but it is the flat-fee car seller problem. Paying for volume invites heavy discounting and risky deals, exactly what the board fears." },
+            { text: "$100,000 cash at 12 months plus $200,000 in RSUs vesting over 3 years, with part of the bonus tied to profit margin and a clawback for restated or reversed deals.", score: 2, fb: "Strong design. Vesting retains, stock aligns with owners, profit-based metrics avoid the volume trap, and the clawback addresses last year's problem directly." },
+            { text: "A 50% base salary increase instead of any bonus.", score: 0, fb: "A permanent raise costs far more than $300K over time and puts nothing at risk. It does not reward performance or protect against bad deals." }
+          ],
+          keywords: [
+            { words: ["vest", "years", "stay", "retain", "retention", "defer"], note: "You used time-based vesting or deferral to keep the VP around.", hint: "Retain: use vesting or deferral so the VP must stay to collect." },
+            { words: ["stock", "rsu", "equity", "share", "owner", "align"], note: "You aligned the VP's interests with the owners through equity.", hint: "Align: pay partly in equity so the VP thinks like an owner." },
+            { words: ["profit", "margin", "quality", "discount"], note: "You avoided the volume trap by tying pay to profitability.", hint: "Reward the right metric: profit, not just sales volume." },
+            { words: ["clawback", "claw", "reclaim", "restate"], note: "You included a clawback to handle deals that fall apart.", hint: "Protect: add a clawback for deals that later fall apart." }
+          ],
+          missing: "A complete package usually answers four questions: Does it retain (vesting)? Does it align (equity)? Does it reward the right result (profit, not volume)? Can we take it back if it was earned improperly (clawback)?",
+          secret: "<p><b>Good incentive design is agency-cost management.</b> The book's car-seller example says the way you pay someone shapes what they do. Pay for volume and you get volume. Pay with equity, over time, for profitable results, with a clawback, and you get behavior that builds owners' value.</p><p>This four-part checklist (retain, align, reward the right metric, protect) works for packages at every level, not just executives.</p>"
+        },
+        {
+          id: "m3e2",
+          title: "Underwater options and a worried workforce",
+          scenario:
+            '<p>Two years ago your company granted stock options to 400 engineers at a strike price of <span class="num">$40</span>. After a tough market, the stock now trades at <span class="num">$28</span>. Engagement scores have dropped, and a competitor is recruiting your engineers with RSU-heavy offers.</p>',
+          question: "What is the most accurate way to understand the situation?",
+          choices: [
+            { text: "The options are still worth $40 each, so employees are overreacting.", score: 0, fb: "An option is valuable only if the stock is above the strike. At $28, exercising would mean paying $40 for a $28 share, so the options have no value today." },
+            { text: "The options are underwater: worth nothing if exercised today. They have lost their retention power, while RSUs would still be worth $28 per share. Any fix has a cost to owners that Finance must weigh.", score: 2, fb: "Exactly. Underwater options stop retaining and motivating. Fixes such as new grants, a switch to RSUs, or repricing all have costs to shareholders, so HR and Finance must decide together." },
+            { text: "Underwater options are good for the company because they cost nothing.", score: 0, fb: "They may cost little in accounting terms, but losing engineers to competitors is expensive in recruiting, lost productivity and project delays." },
+            { text: "This is purely a stock-market issue and has nothing to do with HR.", score: 0, fb: "The stock price is a market issue, but the people impact (retention, engagement, competitive offers) is very much an HR issue." }
+          ],
+          keywords: [
+            { words: ["underwater", "worthless", "zero", "no value", "nothing", "below"], note: "You recognized the options are underwater.", hint: "The options are underwater: the stock is below the $40 strike." },
+            { words: ["rsu", "restricted"], note: "You saw why RSU offers are attractive: they keep value when the stock falls.", hint: "RSU offers keep value even when the stock falls." },
+            { words: ["retain", "retention", "leave", "attrition", "turnover", "engag"], note: "You linked the option value to retention and engagement.", hint: "Worthless options lose their retention and engagement power." },
+            { words: ["cost", "shareholder", "owner", "dilut", "finance"], note: "You considered the cost of a fix to the owners, which is how Finance will see it.", hint: "Any fix costs the owners something, which is how Finance will see it." }
+          ],
+          missing: "Strike price vs. current price is the whole story for an option: when the current price is lower, the option has no exercise value today.",
+          secret: "<p><b>Options are a bet on the stock price, so they cut both ways.</b> They motivate strongly in good times and lose their pull in bad times, just when you most need people to stay. This is one reason the book notes RSUs have grown in recent years.</p><p>A balanced equity plan often mixes both: options for upside, RSUs for staying power.</p>"
+        }
+      ]
+    }
+  ];
+
+  var TOTAL_EX = MODULES.reduce(function (n, m) { return n + m.exercises.length; }, 0);
+
+  /* ---------- Helpers ---------- */
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function money(n) { var neg = n < 0; var s = "$" + Math.round(Math.abs(n)).toLocaleString("en-US"); return neg ? "−" + s : s; }
+  function moneyM(n) { var neg = n < 0; var s = "$" + Math.abs(n).toFixed(2).replace(/\.?0+$/, "") + "M"; return neg ? "−" + s : s; }
+  var mainEl = $("#main");
+  var view = { name: "home", module: null, step: 0, exIndex: 0 };
+
+  function modById(id) { for (var i = 0; i < MODULES.length; i++) if (MODULES[i].id === id) return MODULES[i]; return null; }
+  function moduleDone(m) { return m.exercises.every(function (e) { return state.done[e.id]; }); }
+  function moduleSomeDone(m) { return m.exercises.some(function (e) { return state.done[e.id]; }); }
+
+  function updateProgress() {
+    var n = Object.keys(state.done).filter(function (k) { return state.done[k]; }).length;
+    $("#progress-text").textContent = n + " of " + TOTAL_EX + " exercises";
+    $("#progress-fill").style.width = (n / TOTAL_EX * 100) + "%";
+  }
+
+  /* ---------- Rail ---------- */
+  function renderRail() {
+    var html = '<div class="eyebrow rail-label">Your path</div>';
+    html += '<button class="rail-btn" data-go="home"' + (view.name === "home" ? ' aria-current="page"' : "") + '><span class="rail-no">✦</span><span class="rail-title">Welcome<span class="rail-sub">Start here</span></span><span></span></button>';
+    MODULES.forEach(function (m) {
+      html += '<button class="rail-btn" data-go="' + m.id + '"' + (view.module === m.id ? ' aria-current="page"' : "") + '><span class="rail-no">' + m.no + '</span><span class="rail-title">' + esc(m.short) + '<span class="rail-sub">Module ' + m.no + '</span></span>' + (moduleDone(m) ? '<span class="tick" aria-label="completed">✓</span>' : '<span></span>') + '</button>';
+    });
+    html += '<hr><button class="rail-btn" data-go="glossary"' + (view.name === "glossary" ? ' aria-current="page"' : "") + '><span class="rail-no">Aa</span><span class="rail-title">Jargon translator<span class="rail-sub">Dive deeper</span></span><span></span></button>';
+    $("#rail").innerHTML = html;
+  }
+
+  /* ---------- Views ---------- */
+  function renderHome() {
+    var html = '<div class="page">' +
+      '<section class="hero"><span class="eyebrow">Welcome, HR partner</span>' +
+      '<h1>Finance is the language your CFO speaks. Let\'s make it yours too.</h1>' +
+      '<p class="lead">This guide turns the core ideas of <i>Corporate Finance</i> (13th edition, Ross, Westerfield, Jaffe and Jordan) into plain language, with every concept tied back to payroll, headcount, benefits and pay. No heavy formulas, just the intuition you need to hold your own in budget meetings.</p></section>' +
+      '<section class="why" aria-label="Why finance matters for HR">' +
+      '<div class="why-item"><strong>Win headcount approvals</strong><p>Frame hiring as an investment: cost now, cash benefits later, with risk named honestly.</p></div>' +
+      '<div class="why-item"><strong>Design pay that works</strong><p>Bonuses, options and clawbacks are finance tools. Knowing how they work makes your plans stronger.</p></div>' +
+      '<div class="why-item"><strong>Read the room early</strong><p>Spot a cash squeeze before the hiring freeze, and explain it calmly to managers.</p></div>' +
+      '</section>' +
+      '<section class="menu" aria-label="Learning modules"><h2>Choose a module</h2>';
+    MODULES.forEach(function (m) {
+      var status = moduleDone(m) ? '<span class="pill good">Completed</span>' : (moduleSomeDone(m) ? '<span class="pill warn">In progress</span>' : '');
+      html += '<button class="menu-card" data-go="' + m.id + '"><span class="menu-no">' + m.no + '</span><span><h3>' + esc(m.title) + '</h3><p>' + esc(m.blurb) + '</p><span class="menu-src">Based on ' + esc(m.src) + '</span></span><span class="menu-go">' + (status || 'Start →') + '</span></button>';
+    });
+    html += '</section>' +
+      '<div class="callout hr"><span class="eyebrow">How each module works</span><p>Short plain-language lessons with examples from the book, a hands-on calculator, then an HR scenario exercise. Pick an answer, explain your thinking, and get feedback plus the finance "secret" behind it.</p></div>' +
+      nextPanel("home") + '</div>';
+    mainEl.innerHTML = html;
+  }
+
+  function stepsBar(m) {
+    var html = '<nav class="steps" aria-label="Lesson steps">';
+    m.sections.forEach(function (s, i) {
+      html += '<button class="step-chip" data-step="' + i + '"' + (view.step === i ? ' aria-current="step"' : "") + '>' + (i + 1) + '. ' + esc(s.title) + '</button>';
+    });
+    var exStep = m.sections.length;
+    html += '<button class="step-chip' + (moduleSomeDone(m) ? ' done' : '') + '" data-step="' + exStep + '"' + (view.step === exStep ? ' aria-current="step"' : "") + '>' + (exStep + 1) + '. HR exercise' + (moduleSomeDone(m) ? ' ✓' : '') + '</button>';
+    return html + '</nav>';
+  }
+
+  function renderModule() {
+    var m = modById(view.module);
+    var isEx = view.step >= m.sections.length;
+    var html = '<div class="page"><header class="lesson-head"><span class="eyebrow">Module ' + m.no + '</span><h1>' + esc(m.title) + '</h1><p class="src">Based on ' + esc(m.src) + '</p></header>' + stepsBar(m);
+    if (!isEx) {
+      var s = m.sections[view.step];
+      html += '<section style="display:grid;gap:20px"><h2>' + esc(s.title) + '</h2>' + s.html + '<div id="term-pop-slot"></div></section>';
+      html += '<div class="pager">' +
+        (view.step > 0 ? '<button class="btn" data-step="' + (view.step - 1) + '">← ' + esc(m.sections[view.step - 1].title) + '</button>' : '<span></span>') +
+        (view.step < m.sections.length - 1
+          ? '<button class="btn primary" data-step="' + (view.step + 1) + '">Next: ' + esc(m.sections[view.step + 1].title) + ' →</button>'
+          : '<button class="btn primary" data-step="' + m.sections.length + '">Take the HR exercise →</button>') +
+        '</div>';
+    } else {
+      html += renderExercise(m, m.exercises[view.exIndex]);
+    }
+    html += '</div>';
+    mainEl.innerHTML = html;
+    mountWidgets();
+    if (isEx) bindExercise(m, m.exercises[view.exIndex]);
+  }
+
+  /* ---------- Exercise ---------- */
+  var draft = {};
+  function renderExercise(m, ex) {
+    var d = draft[ex.id] || (draft[ex.id] = { choice: null, reason: "", submitted: false });
+    var html = '<section class="exercise" aria-labelledby="ex-title"><div class="scenario"><span class="eyebrow">HR exercise ' + (view.exIndex + 1) + ' of ' + m.exercises.length + (state.done[ex.id] ? ' · completed before' : '') + '</span><h2 id="ex-title">' + esc(ex.title) + '</h2>' + ex.scenario + '</div>' +
+      '<div><h3 style="margin-bottom:10px">' + esc(ex.question) + '</h3><div class="choices" role="group" aria-label="Answer choices">';
+    ex.choices.forEach(function (c, i) {
+      var cls = "choice";
+      if (d.submitted && i === d.choice) cls += c.score === 2 ? " is-right" : " is-wrong";
+      else if (d.submitted && c.score === 2) cls += " is-right";
+      html += '<button class="' + cls + '" data-choice="' + i + '" aria-pressed="' + (d.choice === i) + '"' + (d.submitted ? ' disabled' : '') + '><span class="letter">' + "ABCD"[i] + '</span><span>' + c.text + '</span></button>';
+    });
+    html += '</div></div>' +
+      '<div style="display:grid;gap:6px"><label class="reason-label" for="reason-' + ex.id + '">Your reasoning</label><span class="reason-hint">In a sentence or two, explain why. The feedback will respond to what you write.</span>' +
+      '<textarea id="reason-' + ex.id + '" placeholder="e.g. I chose this because…"' + (d.submitted ? ' readonly' : '') + '>' + esc(d.reason) + '</textarea></div>' +
+      '<div class="actions">' + (d.submitted
+        ? '<button class="btn" id="ex-retry">Try this one again</button>'
+        : '<button class="btn primary" id="ex-submit">Submit my answer</button><span class="form-note" id="ex-note" hidden>Pick one of the answers first.</span>') + '</div>' +
+      '<div id="ex-feedback">' + (d.submitted ? feedbackHtml(ex, d) : '') + '</div>' +
+      '</section>';
+    if (d.submitted) html += nextPanel("exercise", m);
+    return html;
+  }
+
+  function feedbackHtml(ex, d) {
+    var c = ex.choices[d.choice];
+    var verdict = c.score === 2 ? '<span class="pill good">Strong answer</span>' : (c.score === 1 ? '<span class="pill warn">Partly there</span>' : '<span class="pill bad">Let\'s rethink this</span>');
+    var text = (d.reason || "").toLowerCase();
+    var hits = ex.keywords.filter(function (k) { return k.words.some(function (w) { return text.indexOf(w) !== -1; }); });
+    var html = '<div class="feedback" aria-live="polite"><h3>' + verdict + ' You chose ' + "ABCD"[d.choice] + '</h3><p>' + c.fb + '</p>';
+    if (c.score !== 2) {
+      var best = ex.choices.filter(function (x) { return x.score === 2; })[0];
+      html += '<p><b>The strongest answer:</b> ' + best.text + '</p>';
+    }
+    if (d.reason.trim()) {
+      html += '<div style="display:grid;gap:8px"><span class="eyebrow">On your reasoning</span><p class="you-said">“' + esc(d.reason.trim()) + '”</p>';
+      if (hits.length) {
+        html += '<ul>' + hits.map(function (h) { return '<li>' + h.note + '</li>'; }).join("") + '</ul>';
+        if (hits.length < ex.keywords.length) {
+          var miss = ex.keywords.filter(function (k) { return hits.indexOf(k) === -1; })[0];
+          html += '<p><b>One more angle to add:</b> ' + miss.hint + '</p>';
+        }
+      } else {
+        html += '<p>' + ex.missing + '</p><p><b>Points a strong answer covers:</b></p><ul>' + ex.keywords.map(function (k) { return '<li>' + k.hint + '</li>'; }).join("") + '</ul>';
+      }
+      html += '</div>';
+    } else {
+      html += '<p><i>Tip:</i> adding a sentence of reasoning next time gets you feedback on your thinking, not just your choice.</p>';
+    }
+    html += '<div class="callout secret"><span class="eyebrow">The finance secret</span>' + ex.secret + '</div></div>';
+    return html;
+  }
+
+  function bindExercise(m, ex) {
+    var d = draft[ex.id];
+    $$(".choice", mainEl).forEach(function (b) {
+      b.addEventListener("click", function () {
+        d.choice = +b.getAttribute("data-choice");
+        $$(".choice", mainEl).forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+        var note = $("#ex-note"); if (note) note.hidden = true;
+      });
+    });
+    var ta = $("#reason-" + ex.id);
+    if (ta) ta.addEventListener("input", function () { d.reason = ta.value; });
+    var submit = $("#ex-submit");
+    if (submit) submit.addEventListener("click", function () {
+      if (d.choice === null) { $("#ex-note").hidden = false; return; }
+      d.reason = ta.value; d.submitted = true;
+      state.done[ex.id] = true; saveState(); updateProgress(); renderRail();
+      renderModule();
+      var fb = $("#ex-feedback"); if (fb) fb.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    var retry = $("#ex-retry");
+    if (retry) retry.addEventListener("click", function () {
+      draft[ex.id] = { choice: null, reason: "", submitted: false };
+      renderModule();
+    });
+  }
+
+  /* ---------- What next ---------- */
+  function nextPanel(ctx, m) {
+    var html = '<section class="next" aria-label="What next"><h3>What would you like to do next?</h3>';
+    if (ctx === "home") {
+      html += '<p>New to finance? Module 1 builds the foundation the other two rely on. Already comfortable with the basics? Jump straight to pay and incentives in Module 3.</p><div class="actions">' +
+        '<button class="btn primary" data-go="m1">Start Module 1</button><button class="btn" data-go="m3">Jump to pay & incentives</button><button class="btn" data-go="glossary">Open the jargon translator</button></div>';
+    } else {
+      var idx = MODULES.indexOf(m);
+      var other = view.exIndex === 0 ? 1 : 0;
+      var nextMod = MODULES[(idx + 1) % MODULES.length];
+      html += '<p>Nice work. You can try the other exercise in this module, move to a new module, or dig into a concept you want to understand better.</p><div class="actions">' +
+        '<button class="btn primary" data-ex="' + other + '">Try another exercise</button>' +
+        '<button class="btn" data-go="' + nextMod.id + '">Module ' + nextMod.no + ': ' + esc(nextMod.short) + '</button>' +
+        '<button class="btn" data-step="0">Review this lesson</button>' +
+        '<button class="btn" data-go="glossary">Dive deeper on a term</button>' +
+        '<button class="btn" data-go="home">Back to all modules</button></div>';
+    }
+    return html + '</section>';
+  }
+
+  /* ---------- Glossary ---------- */
+  function renderGlossary(focus) {
+    var html = '<div class="page"><header class="lesson-head"><span class="eyebrow">Dive deeper</span><h1>Jargon translator</h1><p class="src">Every term from the modules, in plain English, with an HR analogy. Search or open any term.</p></header>' +
+      '<label class="eyebrow" for="gloss-q">Search terms</label><input class="gloss-search" id="gloss-q" type="search" placeholder="Try “WACC”, “clawback” or “payroll”"><div class="gloss" id="gloss-list">';
+    Object.keys(GLOSSARY).forEach(function (k) {
+      var g = GLOSSARY[k];
+      html += '<details data-k="' + esc(k.toLowerCase() + " " + g.plain.toLowerCase() + " " + g.hr.toLowerCase()) + '"' + (focus === k ? ' open' : '') + '><summary>' + esc(k) + '<span>' + esc(g.ch) + '</span></summary><div><p>' + esc(g.plain) + '</p><p class="hrline"><b>HR analogy:</b> ' + esc(g.hr) + '</p></div></details>';
+    });
+    html += '</div>' + '<section class="next"><h3>What would you like to do next?</h3><p>Pick a module to see these terms in action, or come back here any time a word trips you up.</p><div class="actions">' +
+      MODULES.map(function (m, i) { return '<button class="btn' + (i === 0 ? ' primary' : '') + '" data-go="' + m.id + '">Module ' + m.no + ': ' + esc(m.short) + '</button>'; }).join("") + '</div></section></div>';
+    mainEl.innerHTML = html;
+    var q = $("#gloss-q");
+    q.addEventListener("input", function () {
+      var v = q.value.trim().toLowerCase();
+      $$("#gloss-list details").forEach(function (d) { d.hidden = v && d.getAttribute("data-k").indexOf(v) === -1; });
+    });
+  }
+
+  /* ---------- Widgets ---------- */
+  function mountWidgets() {
+    var w;
+    if ((w = $("#w-midland"))) midland(w);
+    if ((w = $("#w-timing"))) timing(w);
+    if ((w = $("#w-nwc"))) nwc(w);
+    if ((w = $("#w-options"))) options(w);
+  }
+
+  function midland(el) {
+    var mode = "acct";
+    function draw() {
+      var acct = mode === "acct";
+      el.innerHTML = '<div class="widget-head"><span class="eyebrow">Interactive · Midland Company, year-end</span><p>Same transactions, two lenses.</p></div>' +
+        '<div class="seg" role="group" aria-label="View"><button aria-pressed="' + acct + '" data-m="acct">Accounting view</button><button aria-pressed="' + !acct + '" data-m="cash">Cash view</button></div>' +
+        '<div class="table-wrap"><table class="ledger"><tbody>' +
+        (acct
+          ? '<tr><td>Sales (recorded when sold)</td><td class="r">$1,000,000</td></tr><tr><td>Cost of the gold</td><td class="r">−$900,000</td></tr><tr class="total"><td>Profit</td><td class="r pos">$100,000</td></tr>'
+          : '<tr><td>Cash received from customer</td><td class="r">$0</td></tr><tr><td>Cash paid for gold</td><td class="r">−$900,000</td></tr><tr class="total"><td>Cash flow</td><td class="r neg">−$900,000</td></tr>') +
+        '</tbody></table></div>' +
+        '<p class="verdict-line">' + (acct
+          ? 'Accounting says Midland made <b>$100,000</b>. Good news for a bonus calculation.'
+          : 'The bank account is <b>$900,000 lower</b>. If payroll were due tomorrow, this is the number that matters.') + '</p>';
+      $$("[data-m]", el).forEach(function (b) { b.addEventListener("click", function () { mode = b.getAttribute("data-m"); draw(); $("[data-m=" + mode + "]", el).focus(); }); });
+    }
+    draw();
+  }
+
+  function timing(el) {
+    var rate = 10;
+    el.innerHTML = '<div class="widget-head"><span class="eyebrow">Interactive · what is each product worth today?</span><p>The rate is how strongly the company prefers money sooner. Higher rates mean waiting is more costly.</p></div>' +
+      '<div class="slider-row"><label for="rate">Company\'s rate for waiting</label><output id="rate-out">10%</output><input id="rate" type="range" min="0" max="25" step="1" value="10"></div>' +
+      '<div class="bars" id="t-bars"></div><p class="verdict-line" id="t-verdict"></p>';
+    var input = $("#rate", el);
+    function pv(flows, r) { return flows.reduce(function (s, f, i) { return s + f / Math.pow(1 + r, i + 1); }, 0); }
+    function draw() {
+      var r = rate / 100;
+      var a = pv([0, 0, 0, 20000], r), b = pv([4000, 4000, 4000, 4000], r);
+      var max = 20000;
+      $("#rate-out", el).textContent = rate + "%";
+      $("#t-bars", el).innerHTML =
+        '<div class="bar-row"><span>Product A</span><div class="bar-track"><div class="bar-fill a" style="width:' + (a / max * 100) + '%"></div></div><span class="num">' + money(a) + '</span></div>' +
+        '<div class="bar-row"><span>Product B</span><div class="bar-track"><div class="bar-fill b" style="width:' + (b / max * 100) + '%"></div></div><span class="num">' + money(b) + '</span></div>' +
+        '<div class="bar-row"><span style="color:var(--muted)">Cost of each</span><div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--line)"></div></div><span class="num">$10,000</span></div>';
+      var winner = a > b ? "A" : "B";
+      $("#t-verdict", el).innerHTML = rate === 0
+        ? 'With no preference for timing, A looks better simply because <b>$20,000 &gt; $16,000</b>.'
+        : 'At ' + rate + '%, Product <b>' + winner + '</b> is worth more today. ' + (winner === "B" ? 'Getting cash every year beats waiting four years for a bigger lump.' : 'The bigger lump still wins, but the gap is far smaller than the totals suggest.');
+    }
+    input.addEventListener("input", function () { rate = +input.value; draw(); });
+    draw();
+  }
+
+  function nwc(el) {
+    var f = { cash: 2.0, ar: 3.0, inv: 1.0, ap: 1.5, pay: 0.9, loan: 0.6 };
+    var labels = { cash: "Cash", ar: "Money customers owe us", inv: "Inventory", ap: "Supplier bills due", pay: "Payroll due in 2 weeks", loan: "Short-term loan" };
+    var html = '<div class="widget-head"><span class="eyebrow">Interactive · payroll safety check ($ millions, sample company)</span><p>Change any number. The sample values match the Module 2 exercise.</p></div><div class="fields">' +
+      '<span class="eyebrow fieldset-title">Current assets</span>';
+    ["cash", "ar", "inv"].forEach(function (k) { html += '<div class="field"><label for="nwc-' + k + '">' + labels[k] + '</label><input id="nwc-' + k + '" type="number" min="0" step="0.1" value="' + f[k] + '" inputmode="decimal"></div>'; });
+    html += '<span class="eyebrow fieldset-title">Current liabilities</span>';
+    ["ap", "pay", "loan"].forEach(function (k) { html += '<div class="field"><label for="nwc-' + k + '">' + labels[k] + '</label><input id="nwc-' + k + '" type="number" min="0" step="0.1" value="' + f[k] + '" inputmode="decimal"></div>'; });
+    html += '</div><div class="stats" id="nwc-stats"></div><p class="verdict-line" id="nwc-verdict"></p>';
+    el.innerHTML = html;
+    function draw() {
+      var ca = f.cash + f.ar + f.inv, cl = f.ap + f.pay + f.loan;
+      var n = ca - cl, cr = cl ? ca / cl : Infinity, qr = cl ? (ca - f.inv) / cl : Infinity;
+      var dueSoon = f.ap + f.pay;
+      $("#nwc-stats", el).innerHTML =
+        '<div class="stat"><span class="v">' + moneyM(n) + '</span><span class="k">Net working capital</span></div>' +
+        '<div class="stat"><span class="v">' + (isFinite(cr) ? cr.toFixed(2) : "—") + '</span><span class="k">Current ratio</span></div>' +
+        '<div class="stat"><span class="v">' + (isFinite(qr) ? qr.toFixed(2) : "—") + '</span><span class="k">Quick ratio</span></div>';
+      var v;
+      if (f.cash >= dueSoon) v = '<span class="pill good">Covered</span> Cash of ' + moneyM(f.cash) + ' covers payroll and supplier bills due this month (' + moneyM(dueSoon) + ').';
+      else if (f.cash >= f.pay) v = '<span class="pill warn">Tight</span> Payroll (' + moneyM(f.pay) + ') is covered, but payroll plus supplier bills (' + moneyM(dueSoon) + ') exceed cash. The company is relying on customers paying on time.';
+      else v = '<span class="pill bad">At risk</span> Cash (' + moneyM(f.cash) + ') does not cover the next payroll (' + moneyM(f.pay) + '). The company would need to borrow or collect fast.';
+      if (n > 0 && f.cash < dueSoon) v += ' Notice that net working capital is still positive: the cushion exists on paper, not yet in the bank.';
+      $("#nwc-verdict", el).innerHTML = v;
+    }
+    Object.keys(f).forEach(function (k) {
+      var inp = $("#nwc-" + k, el);
+      inp.addEventListener("input", function () { var x = parseFloat(inp.value); f[k] = isFinite(x) && x >= 0 ? x : 0; draw(); });
+    });
+    draw();
+  }
+
+  function options(el) {
+    var price = 65, strike = 50, nOpt = 1000, nRsu = 250;
+    el.innerHTML = '<div class="widget-head"><span class="eyebrow">Interactive · options vs. RSUs</span><p>Both grants were made when the stock was $50, so the option strike price is $50. Where might the stock go?</p></div>' +
+      '<div class="slider-row"><label for="px">Share price at vesting</label><output id="px-out">$65</output><input id="px" type="range" min="20" max="100" step="1" value="65"></div>' +
+      '<div class="bars" id="o-bars"></div><p class="verdict-line" id="o-verdict"></p>';
+    var input = $("#px", el);
+    function draw() {
+      var ov = Math.max(0, price - strike) * nOpt, rv = price * nRsu, max = Math.max(50 * nOpt, 100 * nRsu);
+      $("#px-out", el).textContent = "$" + price;
+      $("#o-bars", el).innerHTML =
+        '<div class="bar-row"><span>1,000 options</span><div class="bar-track"><div class="bar-fill a" style="width:' + (ov / max * 100) + '%"></div></div><span class="num">' + money(ov) + '</span></div>' +
+        '<div class="bar-row"><span>250 RSUs</span><div class="bar-track"><div class="bar-fill b" style="width:' + (rv / max * 100) + '%"></div></div><span class="num">' + money(rv) + '</span></div>';
+      var v;
+      if (price < strike) v = '<span class="pill bad">Underwater</span> At $' + price + ', buying at $50 makes no sense, so the options are worth $0. The RSUs are still worth ' + money(rv) + '. Retention power now sits with the RSUs.';
+      else if (price === strike) v = '<span class="pill warn">At the money</span> The options are worth nothing yet. The stock has to rise for them to pay off.';
+      else if (ov > rv) v = '<span class="pill good">Options lead</span> Each $1 rise above $50 adds $1,000 to the options but only $250 to the RSUs. Strong upside for strong performance.';
+      else v = '<span class="pill warn">RSUs lead</span> The stock is above $50, but not far enough for the options to overtake. Options need a big rise to pay off.';
+      $("#o-verdict", el).innerHTML = v;
+    }
+    input.addEventListener("input", function () { price = +input.value; draw(); });
+    draw();
+  }
+
+  /* ---------- Term popovers ---------- */
+  function showTerm(btn) {
+    var k = btn.getAttribute("data-term");
+    var g = GLOSSARY[k]; if (!g) return;
+    var section = btn.closest("section") || mainEl;
+    var slot = $("#term-pop-slot", section) || $("#term-pop-slot");
+    if (!slot) return;
+    slot.innerHTML = '<div class="term-pop" role="note"><span class="eyebrow">Jargon translator · ' + esc(k) + '</span><p>' + esc(g.plain) + '</p><p class="hrline"><b>HR analogy:</b> ' + esc(g.hr) + '</p><div class="actions"><button class="btn" data-gloss="' + esc(k) + '">See all terms</button></div></div>';
+  }
+
+  /* ---------- Navigation ---------- */
+  function go(target, opts) {
+    opts = opts || {};
+    if (target === "home") { view = { name: "home", module: null, step: 0, exIndex: 0 }; }
+    else if (target === "glossary") { view = { name: "glossary", module: null, step: 0, exIndex: 0 }; }
+    else { view = { name: "module", module: target, step: opts.step || 0, exIndex: opts.exIndex || 0 }; }
+    try { history.replaceState(null, "", "#" + target); } catch (e) { /* ignore */ }
+    try { state.last = target; saveState(); } catch (e) { /* ignore */ }
+    render(opts.focus);
+    window.scrollTo(0, 0);
+    mainEl.focus({ preventScroll: true });
+  }
+
+  function render(focus) {
+    renderRail();
+    if (view.name === "home") renderHome();
+    else if (view.name === "glossary") renderGlossary(focus);
+    else renderModule();
+  }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-go],[data-step],[data-ex],[data-term],[data-gloss],#brand");
+    if (!t) return;
+    if (t.id === "brand") return go("home");
+    if (t.hasAttribute("data-go")) return go(t.getAttribute("data-go"));
+    if (t.hasAttribute("data-gloss")) return go("glossary", { focus: t.getAttribute("data-gloss") });
+    if (t.hasAttribute("data-term")) return showTerm(t);
+    if (t.hasAttribute("data-ex")) {
+      var m = modById(view.module);
+      return go(m.id, { step: m.sections.length, exIndex: +t.getAttribute("data-ex") });
+    }
+    if (t.hasAttribute("data-step")) {
+      view.step = +t.getAttribute("data-step");
+      render(); window.scrollTo(0, 0);
+    }
+  });
+
+  var start = (location.hash || "").replace("#", "");
+  updateProgress();
+  if (start && (start === "glossary" || modById(start))) go(start);
+  else render();
+})();
+</script>
+<!-- END-PAGE -->
+</body>
+</html>
